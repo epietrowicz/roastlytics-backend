@@ -101,7 +101,7 @@ def test(image):
 	# convert the image to grayscale, blur it, and find edges
 	# in the image
 	gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-	gray = cv2.GaussianBlur(gray, (15, 15), 0)
+	gray = cv2.GaussianBlur(gray, (9, 9), 0)
 	edged = cv2.Canny(gray, 75, 200)
 	
 	# find the contours in the edged image, keeping only the
@@ -118,29 +118,32 @@ def test(image):
 	maxX = 0
 	maxY = 0
 
-	for p in maxCnts:
-		x = p[0][0]
-		if x > maxX:
-			maxX = x
-		if x < minX:
-			minX = x
-		
-		y = p[0][1]
-		if y > maxY: 
-			maxY = y
-		if y < minY:
-			minY = y
+	# here i'd rather have the paper clipped a little than accidentally get the background
+	# i'm sorting the points so that we can grab the max left hand coords and the min right hand coords
+	xs = []
+	ys = []
 
-	# for c in cnts:
-	# 	peri = cv2.arcLength(c, True)
-	# 	approx = cv2.approxPolyDP(c, 0.03 * peri, True)
-	# 	if len(approx) == 4:
-	# 		screenCnt = approx
-	# 		break
+	for i in maxCnts:
+		xs.append(i[0][0])
+		ys.append(i[0][1])
+		
+	xs = sorted(xs)
+	ys = sorted(ys)
+
+	index_x_1 = (len(xs) / 2) - 1
+	index_y_1 = (len(ys) / 2) - 1
+
+	index_x_2 = index_x_1 + 1
+	index_y_2 = index_y_1 + 1
+
+	x1 = xs[int(index_x_1)]
+	x2 = xs[int(index_x_2)]
+	y1 = ys[int(index_y_1)]
+	y2 = ys[int(index_y_2)]
 
 	# apply the four point transform to obtain a top-down
 	# view of the original image
-	points = np.array([[minX, minY], [minX, maxY], [maxX, minY], [maxX, maxY]])
+	points = np.array([[x1, y1], [x1, y2], [x2, y1], [x2, y2]])
 
 	warped = four_point_transform(orig, points.reshape(4, 2) * ratio)
 
